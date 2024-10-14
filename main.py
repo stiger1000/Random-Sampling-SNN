@@ -54,6 +54,7 @@ def get_args_parser():
     parser.add_argument('--checkpoint-path', default='./output', type=str)
 
     # distributed training parameters
+    parser.add_argument("--local_rank", type=int, default=0, help="Local rank for distributed training")
     parser.add_argument('--dist_url', default='env://', help='url used to set up distributed training')
     return parser
 
@@ -62,14 +63,15 @@ def main(args):
     utils.init_distributed_mode(args)
 
     device = torch.device('cuda')
+    
+    if utils.is_main_process():
+        print(f'Preparing data!')
 
     train_set, val_set, num_classes = build_dataset(args)
 
     num_tasks = utils.get_world_size()
     global_rank = utils.get_rank()
 
-    if utils.is_main_process():
-        print(f'Preparing data!')
 
     train_sampler = torch.utils.data.DistributedSampler(train_set, num_replicas=num_tasks, rank=global_rank,
                                                         shuffle=True)
